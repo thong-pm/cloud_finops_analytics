@@ -27,3 +27,7 @@ seeds:
     seed_synthetic_segment_revenue:
       +column_types:
         sub_account_id: "{{ 'string' if target.type == 'bigquery' else 'varchar(64)' }}"
+
+vars:
+  sp_floor_percentile: 0.10
+

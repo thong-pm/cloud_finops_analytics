@@ -43,16 +43,16 @@ ec2_sp_sizing as (
     select
         '1_ec2_savings_plan_floor_sizing' as opportunity_id,
         'FOCUS_1.0_2024_09' as dataset_source,
-        'AWS (FOCUS Sept 2024)' as scope,
+        'AWS Compute (FOCUS Export)' as scope,
         'Amazon Elastic Compute Cloud' as target_service,
         count(distinct billing_period_date) as billing_months_in_scope,
         count(*) as affected_days_or_rows,
         round(sum(daily_ondemand_list_cost + daily_sp_covered_list_cost), 2) as current_spend_or_list_exposure_usd,
         round(
-            max(case when rn = cast(ceil(total_days * 0.10) as integer) then daily_ondemand_list_cost else 0 end) * 30.0,
+            max(case when rn = cast(ceil(total_days * {{ var('sp_floor_percentile', 0.10) }}) as integer) then daily_ondemand_list_cost else 0 end) * 30.0,
             2
         ) as monthly_addressable_spend_usd,
-        'EC2 Savings Plan coverage is 2.0% on a ListCost basis ($35.91 covered vs $1,755.88 On-Demand); sizing a 1-year Compute Savings Plan to the p10 daily On-Demand baseline floor captures steady-state discount with minimal idle commitment risk.' as engineering_rationale
+        'Sizes a 1-year Compute Savings Plan to the daily baseline floor to capture steady-state commitment discount with minimal idle commitment risk.' as engineering_rationale
     from ec2_ranked
 ),
 
@@ -60,7 +60,7 @@ dev_gpu_instances as (
     select
         '2_dev_gpu_offhours_scheduling' as opportunity_id,
         'FOCUS_1.0_2024_09' as dataset_source,
-        'AWS (FOCUS Sept 2024)' as scope,
+        'AWS EC2 Dev Instances (FOCUS Export)' as scope,
         'Amazon Elastic Compute Cloud (Dev GPU)' as target_service,
         count(distinct billing_period_date) as billing_months_in_scope,
         count(*) as affected_days_or_rows,
@@ -69,7 +69,7 @@ dev_gpu_instances as (
             sum(billed_cost) / nullif(count(distinct billing_period_date), 0),
             2
         ) as monthly_addressable_spend_usd,
-        '374 rows of g3/g5 GPU instances tagged environment=dev running On-Demand; stopping non-production GPU instances outside weekday working hours reduces active runtime hours.' as engineering_rationale
+        'Enforces scheduled off-hours shutdown for development-tagged GPU instances outside weekday working hours to reduce idle runtime hours.' as engineering_rationale
     from focus_aws_usage
     where tag_environment = 'dev'
       and (
@@ -84,7 +84,7 @@ vpc_idle_ipv4 as (
     select
         '3_vpc_idle_public_ipv4_release' as opportunity_id,
         'FOCUS_1.0_2024_09' as dataset_source,
-        'AWS (FOCUS Sept 2024)' as scope,
+        'AWS VPC Public IPv4 (FOCUS Export)' as scope,
         'Amazon Virtual Private Cloud' as target_service,
         count(distinct billing_period_date) as billing_months_in_scope,
         count(*) as affected_days_or_rows,
@@ -94,7 +94,7 @@ vpc_idle_ipv4 as (
             / nullif(count(distinct billing_period_date), 0),
             2
         ) as monthly_addressable_spend_usd,
-        'Separates $18.07 in-use public IPv4 charges from $1.21 of unattached Idle public IPv4 address hours ($0.005/hr); releasing unattached Elastic IPs eliminates idle address charges.' as engineering_rationale
+        'Identifies unattached idle public IPv4 address hours to eliminate charges by releasing unattached Elastic IPs.' as engineering_rationale
     from focus_aws_usage
     where service_name = 'Amazon Virtual Private Cloud'
       and charge_description like '%public IPv4%'
@@ -104,7 +104,7 @@ s3_egress_share as (
     select
         '4_s3_egress_transfer_reduction' as opportunity_id,
         'FOCUS_1.0_2024_09' as dataset_source,
-        'AWS (FOCUS Sept 2024)' as scope,
+        'AWS S3 Data Transfer (FOCUS Export)' as scope,
         'Amazon Simple Storage Service' as target_service,
         count(distinct billing_period_date) as billing_months_in_scope,
         count(*) as affected_days_or_rows,
@@ -121,7 +121,7 @@ s3_egress_share as (
             ) / nullif(count(distinct billing_period_date), 0),
             2
         ) as monthly_addressable_spend_usd,
-        'S3 transfer charges consist of $3.80 public internet egress ($0.090-$0.085/GB data transfer out) and $0.21 cross-region transfer ($0.02/GB AWS-Out-Bytes/inter-region) vs $2.54 storage; serving public downloads via CloudFront CDN (where S3-to-CloudFront origin fetch is $0.00/GB) with object compression and co-locating cross-region compute reduces transfer spend.' as engineering_rationale
+        'Separates public internet egress and inter-region transfer from storage charges to reduce egress via CloudFront CDN edge caching, object compression, and same-region compute co-location.' as engineering_rationale
     from focus_aws_usage
     where service_name = 'Amazon Simple Storage Service'
 ),
@@ -130,7 +130,7 @@ cur_ri_unused_waste as (
     select
         '5_cur_reserved_instance_unused_waste' as opportunity_id,
         'AWS_CUR_2018_Q4' as dataset_source,
-        'AWS CUR (Oct-Dec 2018 3-Month Normalized to Monthly)' as scope,
+        'AWS Reserved Instances (CUR Export)' as scope,
         'Reserved Instances (RIFee)' as target_service,
         count(distinct billing_period_date) as billing_months_in_scope,
         count(*) as affected_days_or_rows,
@@ -139,7 +139,7 @@ cur_ri_unused_waste as (
             sum(unused_commitment_waste) / nullif(count(distinct billing_period_date), 0),
             2
         ) as monthly_addressable_spend_usd,
-        'Quantifies unused Reserved Instance commitment waste ($49.00 Oct + $43.22 Nov + $52.88 Dec = $145.09 across 3 months, or $48.36/month average) recoverable via AZ/Linux instance size-flex modification, Convertible RI exchange, or Standard RI Marketplace resale.' as engineering_rationale
+        'Normalizes unutilized Reserved Instance recurring and amortized upfront commitment fees recoverable via instance size-flex modification or RI Marketplace resale.' as engineering_rationale
     from {{ ref('stg_aws_cur_cost') }}
     where line_item_line_item_type in ('DiscountedUsage', 'RIFee')
 ),

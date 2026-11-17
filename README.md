@@ -24,9 +24,14 @@ Directly aggregating raw billing rows distorts unit economics and breaks standar
   - Effective Savings Rate (`effective_savings_rate_pct` computed from list vs effective cost on commitment-covered usage).
 - `mrt_segment_unit_economics.sql`: Customer segment margin model joining direct sub-account usage and pro-rata allocated shared infrastructure spend against a labeled synthetic revenue seed (`is_synthetic_revenue = true`).
 
-### 3. Savings Opportunities & Segment Margins
-- Quantifies initial rate and usage optimization opportunities across EC2, dev GPU scheduling, and S3 transfer.
-- Materializes mrt_segment_unit_economics.sql joining customer segments against pro-rata infrastructure spend.
+### 3. Range-Based Savings Opportunities & AWS Documentation Sources
+- `dbt_finops/seeds/seed_finops_savings_assumptions.csv`: Parameter table storing `low_factor`, `base_factor`, and `high_factor` recovery assumptions, rationale notes, and official AWS documentation URLs for each optimization lever (no hardcoded discount multipliers in SQL).
+- `dbt_finops/models/marts/mrt_savings_opportunities.sql`: Joins observed monthly addressable spend (normalized by `COUNT(DISTINCT billing_period_date)`) against `seed_finops_savings_assumptions.csv` to output `estimated_monthly_savings_low_usd`, `estimated_monthly_savings_usd` (base), and `estimated_monthly_savings_high_usd` across five levers:
+  1. **EC2 Savings Plan Floor Sizing (Rate Optimization):** Sizes a 1-year Compute Savings Plan to the daily `p10` On-Demand usage floor (`https://aws.amazon.com/savingsplans/compute-pricing/`).
+  2. **Dev GPU Off-Hours Scheduling (Usage Optimization):** Models weekday working-hours scheduling on `environment=dev` GPU instances (`https://docs.aws.amazon.com/solutions/latest/instance-scheduler-on-aws/solution-overview.html`).
+  3. **Idle Public IPv4 Address Release (Usage Optimization):** Isolates unattached `Idle public IPv4` address charges from active attached IPv4 charges (`https://aws.amazon.com/blogs/aws/new-aws-public-ipv4-address-charge-public-ip-insights/`).
+  4. **S3 Internet Egress & Cross-Region Transfer Reduction (Usage Optimization):** Separates S3 public internet egress (`data transfer out`) and inter-region transfer (`AWS-Out-Bytes`) from storage spend. Because same-region S3-to-EC2 transfer is already free on the S3 bill, reduction is modeled via CloudFront CDN edge caching (where S3-to-CloudFront origin fetch is free), object compression, and same-region compute placement (`https://aws.amazon.com/s3/pricing/`).
+  5. **Reserved Instance Unused Commitment Recovery (Rate Optimization):** Normalizes multi-month `RIFee` unused upfront and recurring commitment fees to a monthly rate and applies recovery bounds for AZ/Linux instance size-flex modification or RI Marketplace resale (`https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ri-Modifying.html`).
 
 ### 4. Tests, FOCUS Conformance & Source-to-Mart Reconciliation
 - `fct_cost_reconciliation_audit.sql`: Audits cash vs amortized totals across `FOCUS_1.0` and `AWS_CUR_2018`, isolating upstream FOCUS integer-rounding loss from commitment amortization timing differences.

@@ -28,3 +28,19 @@
 2. **FOCUS 1.0 Standard Usage Rounding Audit:**
    * **Microsoft Standard Usage (4,949 rows):** `BilledCost = 567.2103`, `EffectiveCost = 567.2103` (`Raw Variance = 0.0000`).
    * **AWS Standard Usage (93,749 rows):** `BilledCost = 2,026.5696`, `EffectiveCost = 1,484.3200` (`Raw Variance = 542.2496`). Of the 93,749 rows, **93,738 rows** satisfy `EffectiveCost = ROUND(BilledCost, 0)` (accounting for `541.5696` of integer-rounding loss), leaving only `0.6800` across 7 Marketplace rows.
+
+### D. Range-Based Savings Opportunities (`mrt_savings_opportunities`)
+1. `1_ec2_savings_plan_floor_sizing`: `$372.59/mo` addressable p10 On-Demand floor -> `$74.52` low (20%) / `$104.33` base (28%) / `$130.41` high (35%) monthly savings (`https://aws.amazon.com/savingsplans/compute-pricing/`).
+2. `2_dev_gpu_offhours_scheduling`: `$557.49/mo` addressable `environment = 'dev'` GPU spend (374 rows) -> `$195.12` low (35%) / `$278.75` base (50%) / `$356.79` high (64%) monthly savings (`https://docs.aws.amazon.com/solutions/latest/instance-scheduler-on-aws/solution-overview.html`).
+3. `3_vpc_idle_public_ipv4_release`: `$1.22/mo` unattached `Idle public IPv4` spend -> `$1.10` low (90%) / `$1.22` base (100%) / `$1.22` high (100%) monthly savings (`https://aws.amazon.com/blogs/aws/new-aws-public-ipv4-address-charge-public-ip-insights/`).
+4. `4_s3_egress_transfer_reduction`: `$4.02/mo` S3 transfer spend (`$3.80` internet egress + `$0.21` cross-region transfer) -> `$0.80` low (20%) / `$1.61` base (40%) / `$2.41` high (60%) monthly savings via CloudFront CDN caching, compression, and same-region compute co-location (`https://aws.amazon.com/s3/pricing/`).
+5. `5_cur_reserved_instance_unused_waste`: `$48.36/mo` normalized monthly unused RI commitment waste (`$145.09` across Oct-Dec 2018) -> `$24.18` low (50%) / `$36.27` base (75%) / `$42.56` high (88%, net of 12% RI Marketplace fee) monthly savings (`https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ri-Modifying.html`).
+
+### E. Config-Driven Anomaly Detection & Dynamic Backtest (`analysis/config.yaml`, `analysis/spike_and_forecast_eval.py`)
+* Hyperparameters and backtest settings configured in `analysis/config.yaml` (`window_size_days: 7`, `z_score_threshold: 3.0`, `persistence_consecutive_days: 3`, `mad_scale_floor_pct: 0.05`, `ewma_smoothing_alpha: 0.45`, `post_spike_eval_window_days: 5`, `trailing_holdout_ratio: 0.15`).
+* **Dynamic Post-Spike Recovery Window (`2024-09-10` to `2024-09-23`, 6 evaluated days):**
+  * 7-Day Rolling Rule of Thumb MAE (`$15.83/day`) outperforms the reactive EWMA model (`$20.26/day`).
+* **Dynamic Workload Step-Change Window (`2024-09-11` to `2024-09-26`, 7 evaluated days):**
+  * The **Regime-Aware EWMA Model** (`$35.67/day`) significantly outperforms the naive rolling mean (`$46.66/day`) and spike-stripped median (`$55.26/day`).
+* **Dynamic Trailing Out-of-Sample Holdout on Unsampled CUR (`2018-12-19` to `2018-12-31`, 13 evaluated days):**
+  * Regime-Aware EWMA Model MAE (`$0.40/day`) outperforms naive rolling mean (`$0.57/day`) and spike-stripped median (`$0.47/day`).
