@@ -1,0 +1,25 @@
+# Python & virtual environments
+.venv
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+
+# dbt artifacts
+dbt_finops/target/
+dbt_finops/dbt_packages/
+dbt_finops/logs/
+dbt_finops/.user.yml
+
+# Local notes
+.agents/job_des.md
+
+# Local data & credentials
+data/*.csv
+data/*.csv.gz
+data/*.parquet
+data/*.duckdb
+data/*.duckdb.wal
+.env
+*.json
+!dbt_finops/**/*.json

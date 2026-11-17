@@ -1,0 +1,11 @@
+version: 2
+
+sources:
+  - name: finops_raw
+    schema: finops_raw
+    tables:
+      - name: focus_cost_export
+        description: "FinOps Foundation FOCUS 1.0 multi-cloud billing dataset (100,000 rows) loaded via dlt."
+      - name: aws_cur_export
+        description: "Raw AWS Cost and Usage Report (CUR) Parquet dataset across Oct, Nov, and Dec 2018 (334,911 rows) loaded via dlt."
+

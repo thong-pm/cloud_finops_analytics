@@ -1,0 +1,87 @@
+version: 2
+
+models:
+  - name: fct_cloud_cost_daily
+    description: "Conformed incremental daily cloud cost mart across FOCUS 1.0 and raw AWS CUR, partitioned by charge_date and clustered by provider, account, service, and charge category."
+    columns:
+      - name: dataset_source
+        tests:
+          - not_null
+      - name: charge_date
+        tests:
+          - not_null
+      - name: provider_name
+        tests:
+          - not_null
+      - name: sub_account_id
+        tests:
+          - not_null
+      - name: service_name
+        tests:
+          - not_null
+      - name: billed_cost
+        tests:
+          - not_null
+      - name: effective_cost
+        tests:
+          - not_null
+
+  - name: fct_cost_reconciliation_audit
+    description: "Reconciliation audit table comparing cash vs amortized cost across FOCUS 1.0 and 3-month raw AWS CUR."
+    columns:
+      - name: dataset_source
+        tests:
+          - not_null
+      - name: slice_group
+        tests:
+          - not_null
+
+  - name: mrt_finops_kpis_summary
+    description: "Standard FinOps KPI summary mart reporting tag coverage, commitment coverage, unused commitment waste, and Effective Savings Rate across conformed billing sources."
+    columns:
+      - name: dataset_source
+        tests:
+          - not_null
+      - name: provider_name
+        tests:
+          - not_null
+      - name: tag_coverage_pct
+        tests:
+          - not_null
+      - name: commitment_coverage_pct
+        tests:
+          - not_null
+
+  - name: mrt_savings_opportunities
+    description: "Cloud cost optimization opportunities with low, base, and high monthly savings ranges linked to seed assumptions and AWS documentation."
+    columns:
+      - name: opportunity_id
+        tests:
+          - unique
+          - not_null
+      - name: dataset_source
+        tests:
+          - not_null
+      - name: estimated_monthly_savings_low_usd
+        tests:
+          - not_null
+      - name: estimated_monthly_savings_usd
+        tests:
+          - not_null
+      - name: estimated_monthly_savings_high_usd
+        tests:
+          - not_null
+      - name: aws_doc_url
+        tests:
+          - not_null
+
+  - name: mrt_segment_unit_economics
+    description: "Customer segment unit economics and gross margin model joining AWS sub-account usage with labeled synthetic revenue."
+    columns:
+      - name: sub_account_id
+        tests:
+          - unique
+          - not_null
+      - name: is_synthetic_revenue
+        tests:
+          - not_null

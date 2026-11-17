@@ -1,0 +1,8 @@
+dlt[postgres,bigquery,duckdb]>=1.25.0,<2.0.0
+dbt-core>=1.8.0,<2.0.0
+dbt-postgres>=1.8.0,<2.0.0
+dbt-bigquery>=1.8.0,<2.0.0
+pyarrow>=20.0.0
+pandas>=2.0.0
+psycopg2-binary>=2.9.0
+

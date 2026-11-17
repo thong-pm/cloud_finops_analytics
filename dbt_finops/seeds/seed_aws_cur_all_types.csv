@@ -1,0 +1,11 @@
+test_case_id,line_item_line_item_type,line_item_unblended_cost,line_item_net_unblended_cost,savings_plan_savings_plan_effective_cost,savings_plan_net_savings_plan_effective_cost,savings_plan_total_commitment_to_date,savings_plan_used_commitment,savings_plan_amortized_upfront_commitment_for_billing_period,savings_plan_net_amortized_upfront_commitment_for_billing_period,reservation_reservation_a_r_n,reservation_effective_cost,reservation_net_effective_cost,reservation_unused_amortized_upfront_fee_for_billing_period,reservation_net_unused_amortized_upfront_fee_for_billing_period,reservation_unused_recurring_fee,reservation_net_unused_recurring_fee,expected_amortized_cost,expected_net_amortized_cost
+tc_01_standard_usage,Usage,100.00,90.00,0,0,0,0,0,0,,0,0,0,0,0,0,100.00,90.00
+tc_02_sp_covered_usage,SavingsPlanCoveredUsage,0.00,0.00,72.50,65.25,0,0,0,0,,0,0,0,0,0,0,72.50,65.25
+tc_03_sp_recurring_unused,SavingsPlanRecurringFee,120.00,108.00,0,0,120.00,100.00,50.00,45.00,,0,0,0,0,0,0,20.00,18.00
+tc_04_sp_negation,SavingsPlanNegation,-72.50,-65.25,0,0,0,0,0,0,,0,0,0,0,0,0,0.00,0.00
+tc_05_sp_upfront_fee,SavingsPlanUpfrontFee,1000.00,900.00,0,0,0,0,0,0,,0,0,0,0,0,0,0.00,0.00
+tc_06_ri_discounted_usage,DiscountedUsage,0.00,0.00,0,0,0,0,0,0,arn:aws:ec2:us-east-1:123:reserved-instances/ri-1,45.00,40.50,0,0,0,0,45.00,40.50
+tc_07_ri_fee_unused_waste,RIFee,80.00,72.00,0,0,0,0,0,0,arn:aws:ec2:us-east-1:123:reserved-instances/ri-1,0,0,12.00,10.80,18.00,16.20,30.00,27.00
+tc_08_ri_upfront_fee,Fee,500.00,450.00,0,0,0,0,0,0,arn:aws:ec2:us-east-1:123:reserved-instances/ri-1,0,0,0,0,0,0,0.00,0.00
+tc_09_edp_credit,Credit,-25.00,-25.00,0,0,0,0,0,0,,0,0,0,0,0,0,-25.00,-25.00
+

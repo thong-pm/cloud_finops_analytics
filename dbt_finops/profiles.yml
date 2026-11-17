@@ -1,0 +1,31 @@
+dbt_finops:
+  target: local
+  outputs:
+    local:
+      type: postgres
+      host: "{{ env_var('PG_HOST', 'localhost') }}"
+      port: "{{ env_var('PG_PORT', '5432') | as_number }}"
+      user: "{{ env_var('PG_USER', 'postgres') }}"
+      password: "{{ env_var('PG_PASSWORD', '') }}"
+      dbname: "{{ env_var('PG_DATABASE', 'postgres') }}"
+      schema: finops_mart
+      threads: 4
+    dev:
+      type: bigquery
+      method: oauth
+      project: "{{ env_var('GCP_PROJECT_ID', 'your-gcp-project-id') }}"
+      dataset: finops_dev
+      threads: 4
+      location: US
+      priority: interactive
+      retries: 1
+    prod:
+      type: bigquery
+      method: oauth
+      project: "{{ env_var('GCP_PROJECT_ID', 'your-gcp-project-id') }}"
+      dataset: finops_prod
+      threads: 4
+      location: US
+      priority: interactive
+      retries: 1
+

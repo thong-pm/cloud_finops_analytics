@@ -1,0 +1,12 @@
+sub_account_id,sub_account_name,customer_segment,active_projects,monthly_revenue_usd,is_synthetic_revenue
+11353890204,Atlas Orion,Enterprise_Dedicated_Pool,45,3200.00,true
+18938484842,Orion Zenith,Pro_Tier_Cluster,180,4500.00,true
+69918885631,Odyssey Horizon,Team_Tier_Cluster,12,7188.00,true
+90054491575,Pioneer Voyager,Pro_Tier_Cluster,85,2125.00,true
+69460568468,Nimbus Orion,Free_Tier_Sandbox,620,0.00,true
+85742851457,Orion Odyssey,Pro_Tier_Cluster,64,1600.00,true
+70077301883,Odyssey Odyssey,Team_Tier_Cluster,5,2995.00,true
+21473187560,Orion Pioneer,Free_Tier_Sandbox,310,0.00,true
+84445137922,Pioneer Nimbus,Pro_Tier_Cluster,32,800.00,true
+17370686428,Orion Apollo,Enterprise_Dedicated_Pool,4,2400.00,true
+
