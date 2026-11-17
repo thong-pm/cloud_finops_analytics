@@ -55,3 +55,47 @@ A chronological record tracing operational triggers, architectural pivots, and t
     * **Replaced Hardcoded Multipliers with Documented Seed Ranges (`seed_finops_savings_assumptions.csv`, `mrt_savings_opportunities.sql`)**: Removed hardcoded discount multipliers from SQL, joined against `seed_finops_savings_assumptions.csv` (`low_factor`, `base_factor`, `high_factor`, `aws_doc_url`), normalized all 5 levers by `COUNT(DISTINCT billing_period_date)` so 3-month AWS CUR unused RI waste (`$145.09`) is properly normalized to `$48.36/month` (`$24.18` low / `$36.27` base / `$42.56` high), and fixed the S3 transfer rationale to cite CloudFront CDN edge caching, object compression, and same-region compute co-location.
     * **Added Standard FinOps KPI Summary & Conformance Tests (`mrt_finops_kpis_summary.sql`, `assert_focus_spec_conformance.sql`, `assert_savings_ranges_and_bounds.sql`)**: Added a dedicated KPI mart reporting tag coverage, commitment coverage, unused commitment waste, and Effective Savings Rate across `FOCUS_1.0` and `AWS_CUR_2018`, and verified all 39 `dbt build` steps pass (`PASS=39 WARN=0 ERROR=0`).
     * **Updated `README.md`**: Documented the conformed schema, standard FinOps outputs, seed-backed savings ranges, scale mechanics (partitioning, clustering, incremental strategies), and production deployment differences.
+
+### Phase 4: Centralized Anomaly/Backtest Config & Elimination of Hardcoded Evaluation Dates
+* **Date**: November 17, 2026
+* **Core Artifacts**: `analysis/config.yaml`, `analysis/spike_and_forecast_eval.py`, `dbt_finops/dbt_project.yml`, `dbt_finops/models/marts/mrt_savings_opportunities.sql`, `README.md`
+* **Centralized Configuration & Dynamic Evaluation (`execute:`)**:
+  * **Original Request / Pivot**: Centralize all assumptions into configuration files rather than hardcoding values across files; remove hardcoded calendar dates (`"2024-09-19"`, `"2024-09-23"`, `"2024-09-24"`, `"2024-09-30"`, `"2018-12-18"`, `"2018-12-31"`) and snapshot strings from `analysis/spike_and_forecast_eval.py` and `mrt_savings_opportunities.sql` so assumptions can be tweaked in one place without altering code.
+  * **Execution (`execute:`)**:
+    * **Created `analysis/config.yaml`**: Defined all anomaly detection hyperparameters (`window_size_days: 7`, `z_score_threshold: 3.0`, `persistence_consecutive_days: 3`, `mad_scale_floor_pct: 0.05`, `ewma_smoothing_alpha: 0.45`) and dynamic backtest evaluation settings (`post_spike_eval_window_days: 5`, `trailing_holdout_ratio: 0.15`).
+    * **Dynamic Regime Evaluation in Python (`analysis/spike_and_forecast_eval.py`)**: Updated script to load `analysis/config.yaml` and dynamically evaluate (1) post-spike recovery windows (days immediately following stripped spikes), (2) confirmed persistent regime shifts, and (3) trailing out-of-sample holdout slices (`int(len(series) * trailing_holdout_ratio)`), eliminating all hardcoded calendar dates and hardcoded dollar strings.
+    * **Parameterize dbt Vars & Clean Snapshot Texts (`dbt_project.yml`, `mrt_savings_opportunities.sql`)**: Exposed `sp_floor_percentile: 0.10` in `dbt_project.yml` vars and replaced point-in-time snapshot dollar figures and row counts in `engineering_rationale` and `scope` with clean invariant engineering descriptions.
+    * **Verified**: Executed `dbt build` (`PASS=39 WARN=0 ERROR=0`) and `spike_and_forecast_eval.py` with zero errors.
+
+### Phase 5: Dynamic Markdown Run & Yield Report with Governance Targets
+* **Date**: November 17, 2026
+* **Core Artifacts**: `analysis/config.yaml`, `analysis/spike_and_forecast_eval.py`, `analysis/reports/latest_run_report.md`, `pipeline.sh`, `README.md`
+* **Dynamic Report Generation & Pipeline Yield (`execute:`)**:
+  * **Original Request / Pivot**: Make the pipeline output a short, precise, comprehensive dynamic Markdown report (`latest_run_report.md`) whenever the pipeline runs, allowing parameters in `config.yaml` to be tweaked to immediately re-evaluate the pipeline yield; expand `config.yaml` with FinOps health thresholds and reporting controls.
+  * **Execution (`execute:`)**:
+    * **Expanded `analysis/config.yaml`**: Added `finops_targets` (`min_tag_coverage_pct: 90.0`, `min_commitment_coverage_pct: 70.0`, `max_unattached_ipv4_usd: 0.0`) and `reporting` (`output_markdown_path`, `top_anomalies_display_count: 5`).
+    * **Implemented Dynamic Report Generator (`analysis/spike_and_forecast_eval.py`)**: Added `generate_markdown_report()` that queries PostgreSQL marts (`mrt_finops_kpis_summary`, `mrt_savings_opportunities`, `fct_cost_reconciliation_audit`) and formats 5 sections: (1) Active Configuration & Thresholds, (2) Standard FinOps KPI Scorecard with Pass/Warn health checks against governance targets, (3) Quantified Savings Opportunities (low/base/high monthly estimates and AWS documentation URLs), (4) Source-to-Mart Reconciliation Audit, and (5) Statistical Anomaly Detection & Dynamic Out-of-Sample Backtest.
+    * **Updated `pipeline.sh`**: Surfaced the relative path of `latest_run_report.md` upon completion.
+    * **Verified**: Executed `spike_and_forecast_eval.py` via `run_with_env.py` and confirmed `analysis/reports/latest_run_report.md` is compiled with zero errors.
+
+### Phase 6: Dedicated Database Provisioning & Local Environment Configuration
+* **Date**: November 17, 2026
+* **Core Artifacts**: `.env`, `ingestion/load_finops_data.py`, `analysis/spike_and_forecast_eval.py`, `pipeline.sh`
+* **Dedicated Database & Environment Sourcing (`execute:`)**:
+  * **Original Request / Pivot**: Resolve the `KeyError: 'PG_HOST'` on bare `bash pipeline.sh` by strictly creating a local `.env` file without fallback logic; provision a new dedicated PostgreSQL database (`cloud_finops_db`) owned by the local `wsltest` user; and ensure standalone Python scripts and `pipeline.sh` read that `.env` directly.
+  * **Execution (`execute:`)**:
+    * **Provisioned Dedicated PostgreSQL Database**: Connected via PostgreSQL and created database `cloud_finops_db` with ownership granted to user `wsltest`.
+    * **Created `.env`**: Configured repository `.env` (`PG_HOST=localhost`, `PG_PORT=5432`, `PG_USER=wsltest`, `PG_DATABASE=cloud_finops_db`, `GCP_PROJECT_ID=finops-analytics-project`), which is safely ignored by `.gitignore`.
+    * **Integrated `python-dotenv` in Scripts**: Added explicit `load_dotenv()` calls in `ingestion/load_finops_data.py` and `analysis/spike_and_forecast_eval.py` so running Python scripts standalone or via CLI wrappers automatically sources `.env`.
+    * **Empirical Verification**: Executed `bash pipeline.sh local` directly from a fresh terminal shell without any external wrappers or manual environment exports. Confirmed `dlt` ingestion (6.77s), `dbt build` (39/39 nodes passed, `PASS=39 WARN=0 ERROR=0`), and report compilation into `analysis/reports/latest_run_report.md` all exited with code 0.
+
+### Phase 7: Separation of Action Impact Report & Technical Data Engineering Audit
+* **Date**: November 17, 2026
+* **Core Artifacts**: `analysis/config.yaml`, `analysis/spike_and_forecast_eval.py`, `analysis/reports/impact_report.md`, `analysis/reports/pipeline_audit_report.md`, `pipeline.sh`, `README.md`
+* **Dedicated Action Impact Report (`execute:`)**:
+  * **Original Request / Pivot**: Separate the technical pipeline audit report from an action-oriented business impact report; strip technical clutter and statistical preamble, focusing exclusively on problem description, solve action, department owner, and expected savings in raw numbers and percentages.
+  * **Execution (`execute:`)**:
+    * **Updated `analysis/config.yaml`**: Configured distinct output paths for `impact_markdown_path` (`analysis/reports/impact_report.md`) and `audit_markdown_path` (`analysis/reports/pipeline_audit_report.md`).
+    * **Implemented `generate_impact_report()` in `analysis/spike_and_forecast_eval.py`**: Added dedicated generator that formats an executive summary table and department-specific breakdowns (Problem, Solve Action, Expected Savings: Low/Base/High in $ and %, and documentation links) across all 5 levers.
+    * **Updated `pipeline.sh`**: Outputs the locations of both the Action Impact Report and Technical Audit Report upon run completion.
+    * **Empirical Verification**: Executed `bash pipeline.sh local` directly and verified both reports generate cleanly on `cloud_finops_db` with zero errors.

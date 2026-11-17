@@ -44,3 +44,7 @@
   * The **Regime-Aware EWMA Model** (`$35.67/day`) significantly outperforms the naive rolling mean (`$46.66/day`) and spike-stripped median (`$55.26/day`).
 * **Dynamic Trailing Out-of-Sample Holdout on Unsampled CUR (`2018-12-19` to `2018-12-31`, 13 evaluated days):**
   * Regime-Aware EWMA Model MAE (`$0.40/day`) outperforms naive rolling mean (`$0.57/day`) and spike-stripped median (`$0.47/day`).
+
+### F. Dedicated Action Impact & Technical Audit Reports
+* **Action Impact Report (`analysis/reports/impact_report.md`)**: Strips out technical data engineering clutter and directly reports the problem, solve action, department owner, and expected savings ($ and %) across all 5 rate and usage optimization levers.
+* **Technical Audit Report (`analysis/reports/pipeline_audit_report.md`)**: Details hyperparameter configurations, FinOps governance targets, reconciliation audit down to $0.00, rounding variance, and dynamic regime backtest MAE results.

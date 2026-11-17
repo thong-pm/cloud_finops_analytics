@@ -1,0 +1,20 @@
+anomaly_detection:
+  window_size_days: 7
+  z_score_threshold: 3.0
+  persistence_consecutive_days: 3
+  mad_scale_floor_pct: 0.05
+  ewma_smoothing_alpha: 0.45
+
+backtest:
+  post_spike_eval_window_days: 5
+  trailing_holdout_ratio: 0.15
+
+finops_targets:
+  min_tag_coverage_pct: 90.0
+  min_commitment_coverage_pct: 70.0
+  max_unattached_ipv4_usd: 0.0
+
+reporting:
+  impact_markdown_path: "analysis/reports/impact_report.md"
+  audit_markdown_path: "analysis/reports/pipeline_audit_report.md"
+  top_anomalies_display_count: 5
